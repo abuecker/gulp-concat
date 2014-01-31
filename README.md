@@ -19,12 +19,17 @@
 ## Usage
 
 ```javascript
-var concat = require('gulp-concat');
+var concatPlus = require('gulp-concat-plus');
 
-gulp.task('scripts', function() {
-  gulp.src('./lib/*.js')
-    .pipe(concat('all.js'))
-    .pipe(gulp.dest('./dist/'))
+gulp.task('oneJsonArray', function () {
+    gulp.src('src/json/**/*.json')
+        .pipe(concatPlus('all.json', {
+            before: "[",
+            newLine: ",",
+            after: "]",
+            trim: true
+        }))
+        .pipe(gulp.dest('./build/assets/json/'));
 });
 ```
 

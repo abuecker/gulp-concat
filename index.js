@@ -6,39 +6,51 @@ var PluginError = gutil.PluginError;
 var File = gutil.File;
 
 module.exports = function(fileName, opt){
-  if (!fileName) throw new PluginError('gulp-concat',  'Missing fileName option for gulp-concat');
-  if (!opt) opt = {};
-  if (!opt.newLine) opt.newLine = gutil.linefeed;
 
-  var buffer = [];
-  var firstFile = null;
+    if (!fileName) throw new PluginError('gulp-concat-plus', 'Missing fileName option for gulp-concat');
+    if (!opt) opt = {};
+    if (!opt.newLine) opt.newLine = gutil.linefeed;
+    if (!opt.before) opt.before = "";
+    if (!opt.after) opt.after = "";
+    if (!opt.trim) opt.trim = false;
 
-  function bufferContents(file){
-    if (file.isNull()) return; // ignore
-    if (file.isStream()) return this.emit('error', new PluginError('gulp-concat',  'Streaming not supported'));
+    var buffer = [];
+    var firstFile = null;
 
-    if (!firstFile) firstFile = file;
+    function bufferContents(file){
 
-    buffer.push(file.contents.toString('utf8'));
-  }
+        if (file.isNull()) return; // ignore
+        if (file.isStream()) return this.emit('error', new PluginError('gulp-concat-plus', 'Streaming not supported'));
 
-  function endStream(){
-    if (buffer.length === 0) return this.emit('end');
+        if (!firstFile) firstFile = file;
 
-    var joinedContents = buffer.join(opt.newLine);
+        var content = null;
+        if (opt.trim) {
+            content = file.contents.toString('utf8').trim();
+        } else {
+            content = file.contents.toString('utf8');
+        }
 
-    var joinedPath = path.join(firstFile.base, fileName);
+        buffer.push(content);
+    }
 
-    var joinedFile = new File({
-      cwd: firstFile.cwd,
-      base: firstFile.base,
-      path: joinedPath,
-      contents: new Buffer(joinedContents)
-    });
+    function endStream(){
+        if (buffer.length === 0) return this.emit('end');
 
-    this.emit('data', joinedFile);
-    this.emit('end');
-  }
+        var joinedContents = opt.before + buffer.join(opt.newLine) + opt.after;
 
-  return through(bufferContents, endStream);
+        var joinedPath = path.join(firstFile.base, fileName);
+
+        var joinedFile = new File({
+            cwd: firstFile.cwd,
+            base: firstFile.base,
+            path: joinedPath,
+            contents: new Buffer(joinedContents)
+        });
+
+        this.emit('data', joinedFile);
+        this.emit('end');
+    }
+
+    return through(bufferContents, endStream);
 };
